@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Spark Academy — Past Simple Training Quiz</title>
+  <style>
+    html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#fff}
+    iframe{border:0;width:100%;height:100%;display:block}
+  </style>
+</head>
+<body>
+  <iframe id="quiz"
+          src="https://midododo1428-cmyk.github.io/Grammar-past-simple/"
+          title="Spark Academy Past Simple Quiz"></iframe>
+
+  <script>
+    const RESULTS_URL = 'https://script.google.com/macros/s/AKfycbylCmcmVnbYERyq0JhuC16MjjgMYrSzi2I_MmCVNSVC5lwUNowDN9s-rakHIGMDDGC54Q/exec';
+    const EXAM_ID = 'Y3-PAST-SIMPLE-POWER-LAB-01';
+    const EXAM_TITLE = 'Past Simple Power Lab';
+    let sent = false;
+    let timer = null;
+
+    function txt(el){
+      return el ? el.textContent.trim() : '';
+    }
+
+    function checkForReport(){
+      if(sent) return;
+
+      const frame = document.getElementById('quiz');
+
+      try{
+        const d = frame.contentDocument;
+        if(!d) return;
+
+        const report = d.getElementById('reportScreen');
+        if(!report || report.classList.contains('hidden')) return;
+
+        const student = txt(d.getElementById('reportName'));
+        const scoreText = txt(d.getElementById('kScore'));
+        const accuracyText = txt(d.getElementById('kAccuracy'));
+        const wrongText = txt(d.getElementById('kWrong'));
+        const repairedText = txt(d.getElementById('kRepaired'));
+
+        const scoreParts = scoreText.split('/').map(x => parseInt(x.trim(), 10));
+
+        const mistakes = [...d.querySelectorAll('#mistakeList .mistake')]
+          .map(x => x.innerText.trim())
+          .filter(Boolean);
+
+        const payload = {
+          studentName: student,
+          examId: EXAM_ID,
+          examTitle: EXAM_TITLE,
+          score: Number.isFinite(scoreParts[0]) ? scoreParts[0] : 0,
+          total: Number.isFinite(scoreParts[1]) ? scoreParts[1] : 0,
+          accuracy: parseInt(accuracyText, 10) || 0,
+          initialMistakes: parseInt(wrongText, 10) || 0,
+          repairedMistakes: parseInt(repairedText, 10) || 0,
+          mistakes: mistakes
+        };
+
+        sent = true;
+
+        fetch(RESULTS_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: {'Content-Type':'text/plain;charset=utf-8'},
+          body: JSON.stringify(payload)
+        }).catch(() => {});
+      } catch(e) {
+        // The source and wrapper are expected to be on the same GitHub Pages origin.
+      }
+    }
+
+    document.getElementById('quiz').addEventListener('load', () => {
+      if(timer) clearInterval(timer);
+      timer = setInterval(checkForReport, 1000);
+    });
+  </script>
+</body>
+</html>
